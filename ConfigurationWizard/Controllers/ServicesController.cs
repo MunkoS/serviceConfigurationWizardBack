@@ -4,12 +4,13 @@ using System.Linq;
 using System.Net.Sockets;
 using System;
 using System.Diagnostics;
+using ConfigurationWizard.models;
 
 namespace ConfigurationWizard.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class DasServicesController : Controller
+    public class ServicesController : Controller
     {
         private bool CheckTcpIpClient(string hostName, int port)
         {
@@ -27,23 +28,23 @@ namespace ConfigurationWizard.Controllers
             }
         }
 
-        private string CheckListeningDasPort(string allProcess, int port)
+        private string CheckListeningServicePort(string allProcess, int port, ServicesName serviceName )
         {
             var splitRow = allProcess.Split("\r\n");
             var rowWithIndex = splitRow.Select((item, index) =>
             new
             {
                 ItemName = item,
-                Position = index
+                Position = index - 1
             }).Where(x => x.ItemName.Contains(":" + port.ToString()) && x.ItemName.Contains("LISTENING"));
 
-            if (rowWithIndex.Any(x => splitRow[x.Position - 1].Contains("DAService.exe")))
+            if (rowWithIndex.Any(x => splitRow[x.Position].Contains($"{(serviceName == ServicesName.MirJournalService ? "Mir.Journal.Service" : serviceName)}.exe")))
             {
                 return "";
             }
             else
             {
-                var result = "порт" + port.ToString() + " занят другим процессом:";
+                var result = "порт " + port.ToString() + " занят другим процессом:";
                 rowWithIndex.ToList().ForEach(row =>
                 {
                     if (splitRow[row.Position].Length > 0)
@@ -55,7 +56,7 @@ namespace ConfigurationWizard.Controllers
             }
         }
 
-        private string GetProcessCmd()
+        private string GetProcessCmd(ServicesName serviceName)
         {
             try
             {
@@ -77,23 +78,32 @@ namespace ConfigurationWizard.Controllers
             }
             catch (Exception ex)
             {
-                return "Ошибка при проверке тестового конракта Das" + ex.Message;
+                return $"Ошибка при проверке тестового конракта {serviceName}" + ex.Message;
             }
         }
 
-        [HttpGet]
-        [Route("/checkDasSerice")]
-        public string CheckDasSerice(string hostName = "localhost")
+        [HttpPost]
+        [Route("/checkSerice")]
+        public string CheckSerice(int[] ports, ServicesName serviceName, string hostName = "localhost")
         {
             var scServices = ServiceController.GetServices();
-            var dasService = scServices.FirstOrDefault(x => x.ServiceName == "DAService");
-            if (dasService != null)
+            var service = scServices.FirstOrDefault(x => x.ServiceName == serviceName.ToString());
+            if (service != null)
             {
-                if (dasService.Status != ServiceControllerStatus.Running)
+
+                if (service.Status != ServiceControllerStatus.Running)
                 {
-                    return "Служба DasService не активна!";
+                    return $"Служба {serviceName.ToString()} не активна!";
                 }
 
+                foreach(var port in ports)
+                {
+                    if (!CheckTcpIpClient(hostName, port))
+                    {
+                        return $"Соединение с портом {port} не установлено!";
+                    }
+                }
+/*
                 if (!CheckTcpIpClient(hostName, 7070))
                 {
                     return "Соединение с портом 7070 не установлено!";
@@ -103,10 +113,20 @@ namespace ConfigurationWizard.Controllers
                 {
                     return "Соединение с портом 4568 не установлено!";
                 }
+*/
+                var allProcess = GetProcessCmd(serviceName);
 
-                var allProcess = GetProcessCmd();
 
-                var port7070 = CheckListeningDasPort(allProcess, 7070);
+                foreach (var port in ports)
+                { 
+                    var checkPort = CheckListeningServicePort(allProcess, port, serviceName);
+                        if (checkPort.Length > 0)
+                        {
+                            return checkPort;
+                        }
+                }
+
+             /*   var port7070 = CheckListeningDasPort(allProcess, 7070);
                 var port4568 = CheckListeningDasPort(allProcess, 4568);
                 if (port7070.Length > 0)
                 {
@@ -117,44 +137,44 @@ namespace ConfigurationWizard.Controllers
                 if (port4568.Length > 0)
                 {
                     return port4568;
-                }
+                }*/
 
                 return "";
 
             }
             else
             {
-                return "Служба DasService не найдена!";
+                return $"Служба {serviceName.ToString()} не найдена!";
             }
 
         }
 
         [HttpGet]
-        [Route("/restartDasService")]
-        public string RestartDasService()
+        [Route("/restartService")]
+        public string RestartService(ServicesName service)
         {
             try
             {
                 var scServices = ServiceController.GetServices();
-                var dasService = scServices.FirstOrDefault(x => x.ServiceName == "DAService");
-                if (dasService != null)
+                var currentService = scServices.FirstOrDefault(x => x.ServiceName == service.ToString());
+                if (currentService != null)
                 {
                     int timeoutMilliseconds = 10000;
                     int millisec1 = Environment.TickCount;
                     TimeSpan timeout = TimeSpan.FromMilliseconds(timeoutMilliseconds);
-
-                    dasService.Stop();
-                    dasService.WaitForStatus(ServiceControllerStatus.Stopped, timeout);
+              
+                    currentService.Stop();
+                    currentService.WaitForStatus(ServiceControllerStatus.Stopped, timeout);
 
                     int millisec2 = Environment.TickCount;
                     timeout = TimeSpan.FromMilliseconds(timeoutMilliseconds - (millisec2 - millisec1));
 
-                    dasService.Start();
-                    dasService.WaitForStatus(ServiceControllerStatus.Running, timeout);
+                    currentService.Start();
+                    currentService.WaitForStatus(ServiceControllerStatus.Running, timeout);
                     return "";
 
                 }
-                return "Не удалось перезапустить службу DAService так как она не найдена!";
+                return $"Не удалось перезапустить службу {service} так как она не найдена!";
             }
 
             catch (Exception ex)
