@@ -12,7 +12,7 @@ namespace ConfigurationWizard.Controllers
     [Route("[controller]")]
     public class ServicesController : Controller
     {
-        private bool CheckTcpIpClient(string hostName, int port)
+        private string CheckTcpIpClient(string hostName, int port)
         {
             try
             {
@@ -20,11 +20,11 @@ namespace ConfigurationWizard.Controllers
                 tcpClient.Connect(hostName, port);
                 var result = tcpClient.Connected;
                 tcpClient.Close();
-                return result;
+                return "";
             }
-            catch (SocketException)
+            catch (SocketException e)
             {
-                return false;
+                return e.Message;
             }
         }
 
@@ -98,22 +98,13 @@ namespace ConfigurationWizard.Controllers
 
                 foreach(var port in ports)
                 {
-                    if (!CheckTcpIpClient(hostName, port))
+                    var errorMessage = CheckTcpIpClient(hostName, port);
+                    if (errorMessage.Length > 0)
                     {
-                        return $"Соединение с портом {port} не установлено!";
+                        return $"Соединение с портом {port} не установлено!: {errorMessage}";
                     }
                 }
-/*
-                if (!CheckTcpIpClient(hostName, 7070))
-                {
-                    return "Соединение с портом 7070 не установлено!";
-                }
 
-                if (!CheckTcpIpClient(hostName, 4568))
-                {
-                    return "Соединение с портом 4568 не установлено!";
-                }
-*/
                 var allProcess = GetProcessCmd(serviceName);
 
                 if(allProcess.Contains("Запрошенная операция требует повышения"))
@@ -129,19 +120,6 @@ namespace ConfigurationWizard.Controllers
                             return checkPort;
                         }
                 }
-
-             /*   var port7070 = CheckListeningDasPort(allProcess, 7070);
-                var port4568 = CheckListeningDasPort(allProcess, 4568);
-                if (port7070.Length > 0)
-                {
-                    return port7070;
-                }
-
-
-                if (port4568.Length > 0)
-                {
-                    return port4568;
-                }*/
 
                 return "";
 
