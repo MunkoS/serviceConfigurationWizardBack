@@ -116,6 +116,10 @@ namespace ConfigurationWizard.Controllers
 */
                 var allProcess = GetProcessCmd(serviceName);
 
+                if(allProcess.Contains("Запрошенная операция требует повышения"))
+                {
+                    return "Запустите программу в режиме администратора!";
+                }
 
                 foreach (var port in ports)
                 { 
