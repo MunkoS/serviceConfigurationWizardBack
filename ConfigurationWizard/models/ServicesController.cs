@@ -9,7 +9,9 @@ namespace ConfigurationWizard.models
         [Description("MirJournalService")]
         MirJournalService,
         [Description("DAService")]
-        DAService
+        DAService,
+        [Description("Energy")]
+        Energy
     }
 
 }

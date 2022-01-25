@@ -102,7 +102,7 @@ namespace ConfigurationWizard.Controllers
 
         [HttpPost]
         [Route("/checkDatabaseExist")]
-        public async Task<bool> CheckDatabaseExist(DbConfig prm)
+        public async Task<bool> CheckDatabaseExist(ConfigInfo prm)
         {
             string conString = $"server={prm.HostName};User Id={prm.UserName};pwd={prm.Password};";
 
@@ -125,7 +125,7 @@ namespace ConfigurationWizard.Controllers
 
         [HttpPost]
         [Route("/createNewDB")]
-        public async Task<string> CreateNewDB(DbConfig prm)
+        public async Task<string> CreateNewDB(ConfigInfo prm)
         {
             string conString = $"server={prm.HostName};User Id={prm.UserName};pwd={prm.Password};";
             try

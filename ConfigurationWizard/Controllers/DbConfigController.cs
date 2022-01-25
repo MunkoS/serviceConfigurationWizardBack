@@ -13,7 +13,7 @@ namespace ConfigurationWizard.Controllers
         private readonly string dbConfigPath = @"C:\Users\Public\Documents\MIR\Sunrise\";
         private readonly string dbConfigName = "Dbconnect.xml";
         [HttpGet]
-        public DbConfig Get()
+        public ConfigInfo Get()
         {
             if (!System.IO.File.Exists(dbConfigPath + dbConfigName))
                 return null;
@@ -33,7 +33,7 @@ namespace ConfigurationWizard.Controllers
                         arrayRes[index] = connectinStringPrms[index].Split('=')[1];
                     }
                
-                    return new DbConfig(arrayRes[0], arrayRes[1], arrayRes[2], arrayRes[3]);
+                    return new ConfigInfo(arrayRes[0], arrayRes[1], arrayRes[2], arrayRes[3]);
                 }
                 
 
@@ -43,7 +43,7 @@ namespace ConfigurationWizard.Controllers
         }
 
         [HttpPatch]
-        public bool Udpate(DbConfig prm)
+        public bool Udpate(ConfigInfo prm)
         {
             try
             {
@@ -67,7 +67,7 @@ namespace ConfigurationWizard.Controllers
             return true;
         }
 
-        private void CreateDbConfig(DbConfig prm)
+        private void CreateDbConfig(ConfigInfo prm)
         {
             XmlDocument xmlDoc = new();
             XmlNode rootNode = xmlDoc.CreateElement("Dbconfig");
