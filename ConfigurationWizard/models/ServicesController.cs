@@ -6,12 +6,16 @@ namespace ConfigurationWizard.models
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum ServicesName
     {
-        [Description("MirJournalService")]
+        [Description("Mir.Journal.Service")]
         MirJournalService,
         [Description("DAService")]
         DAService,
         [Description("Energy")]
-        Energy
+        Energy,
+        [Description("Mir.Scada.Dispatcher.Api")]
+        Dispatcher,
+        [Description("Mir.Scada.Editor.Api")]
+        Editor
     }
 
 }

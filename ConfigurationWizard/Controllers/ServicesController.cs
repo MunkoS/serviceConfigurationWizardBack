@@ -12,6 +12,59 @@ namespace ConfigurationWizard.Controllers
     [Route("[controller]")]
     public class ServicesController : Controller
     {
+
+        private string GetServiceName(ServicesName servicesName)
+        {
+            switch (servicesName)
+            {
+                case ServicesName.DAService:
+                    {
+                        return "DAService";
+                    }
+                case ServicesName.MirJournalService:
+                    {
+                        return "MirJournalService";
+                    }
+                case ServicesName.Dispatcher:
+                    {
+                        return "Mir.Scada.Dispatcher.Api";
+                    }
+                case ServicesName.Editor:
+                    {
+                        return "Mir.Scada.Editor.Api";
+                    }
+
+            }
+
+            return "";
+        }
+
+        private string GetNetTcpName(ServicesName servicesName)
+        {
+            switch (servicesName)
+            {
+                case ServicesName.DAService:
+                    {
+                        return "DAService.exe";
+                    }
+                case ServicesName.MirJournalService:
+                    {
+                        return "Mir.Journal.Service.exe";
+                    }
+                case ServicesName.Dispatcher:
+                    {
+                        return "Mir.Scada.Dispatcher.Api.exe";
+                    }
+                case ServicesName.Editor:
+                    {
+                        return "Mir.Scada.Editor.Api.exe";
+                    }
+
+            }
+
+            return "";
+        }
+
         private string CheckTcpIpClient(string hostName, int port)
         {
             try
@@ -38,20 +91,16 @@ namespace ConfigurationWizard.Controllers
                 Position = index - 1
             }).Where(x => x.ItemName.Contains(":" + port.ToString()) && x.ItemName.Contains("LISTENING"));
 
-            if (rowWithIndex.Any(x => splitRow[x.Position].Contains($"{(serviceName == ServicesName.MirJournalService ? "Mir.Journal.Service" : serviceName)}.exe")))
+            var stringServiceName = GetNetTcpName(serviceName);
+
+            if (rowWithIndex.Any(x => splitRow[x.Position].Contains(stringServiceName)))
             {
                 return "";
             }
             else
             {
                 var result = "порт " + port.ToString() + " занят другим процессом:";
-                rowWithIndex.ToList().ForEach(row =>
-                {
-                    if (splitRow[row.Position].Length > 0)
-                    {
-                        result += " " + splitRow[row.Position];
-                    }
-                });
+                result += " " + splitRow[rowWithIndex.FirstOrDefault().Position];
                 return result;
             }
         }
@@ -87,7 +136,8 @@ namespace ConfigurationWizard.Controllers
         public string CheckSerice(int[] ports, ServicesName serviceName, string hostName = "localhost")
         {
             var scServices = ServiceController.GetServices();
-            var service = scServices.FirstOrDefault(x => x.ServiceName == serviceName.ToString());
+            var stringServiceName = GetServiceName(serviceName);
+            var service = scServices.FirstOrDefault(x => x.ServiceName == stringServiceName);
             if (service != null)
             {
 
@@ -138,7 +188,8 @@ namespace ConfigurationWizard.Controllers
             try
             {
                 var scServices = ServiceController.GetServices();
-                var currentService = scServices.FirstOrDefault(x => x.ServiceName == service.ToString());
+                var stringServiceName = GetServiceName(service);
+                var currentService = scServices.FirstOrDefault(x => x.ServiceName == stringServiceName);
                 if (currentService != null)
                 {
                     int timeoutMilliseconds = 10000;
